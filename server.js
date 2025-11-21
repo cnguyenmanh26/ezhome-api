@@ -71,13 +71,14 @@ const corsOptions = {
       callback(null, true);
       return;
     }
-    
+
     // Production: chỉ cho phép domains cụ thể
     let allowedOrigins = [
       "https://ezhome.website",
       "https://www.ezhome.website",
+      process.env.FRONTEND_URL_DEV,
     ];
-    
+
     // Nếu có FRONTEND_URL trong env, override
     if (process.env.FRONTEND_URL && typeof process.env.FRONTEND_URL === 'string') {
       allowedOrigins = process.env.FRONTEND_URL.split(",").map((url) => url.trim());
@@ -112,13 +113,13 @@ app.get("/health", (req, res) => {
   // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   const dbStatusText = {
     0: "disconnected",
-    1: "connected", 
+    1: "connected",
     2: "connecting",
     3: "disconnecting"
   };
-  
-  res.json({ 
-    status: "ok", 
+
+  res.json({
+    status: "ok",
     message: "Server is running",
     database: dbStatusText[dbStatus] || "unknown",
     timestamp: new Date().toISOString(),
@@ -131,7 +132,7 @@ app.get("/api/debug/env", (req, res) => {
   if (process.env.NODE_ENV === "production") {
     return res.status(403).json({ message: "Not available in production" });
   }
-  
+
   res.json({
     env: process.env.NODE_ENV || "development",
     hasJwtAccessSecret: !!process.env.JWT_ACCESS_SECRET,

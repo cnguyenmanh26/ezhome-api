@@ -16,13 +16,13 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
-    const user = await User.findById(decoded.userId).select("-password");
+    // Optimization: Don't query DB, use data from token
+    req.user = {
+      _id: decoded.userId,
+      email: decoded.email,
+      role: decoded.role
+    };
 
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    req.user = user;
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {
