@@ -3,7 +3,7 @@
 ## Lỗi hiện tại:
 ```
 POST https://ezhome.website/api/auth/login 500 (Internal Server Error)
-Response: {"message":"Server error"}
+Response: {"message":"Server error"}12313131323131
 ```
 
 ---
