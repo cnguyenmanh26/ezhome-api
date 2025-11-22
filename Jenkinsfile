@@ -5,7 +5,7 @@ pipeline {
         DOCKER_API_VERSION = '1.43'
         
         // --- CẤU HÌNH ---
-        GIT_REPO_URL    = 'https://github.com/cnguyenmanh26/vietmythluminarts-api.git'
+        GIT_REPO_URL    = 'https://github.com/cnguyenmanh26/ezhome-api.git'
         GIT_BRANCH      = 'main'
         
         CONTAINER_NAME  = 'ezhome_backend'
