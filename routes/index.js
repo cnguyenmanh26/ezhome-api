@@ -65,7 +65,7 @@ router.get("/users", authMiddleware, adminMiddleware, userController.getAllUsers
  */
 router.get("/users/:id", authMiddleware, userController.getUserById);
 
-const upload = require("../middleware/multer");
+const { upload } = require("../middleware/multer");
 
 /**
  * @swagger

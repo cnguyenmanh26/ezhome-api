@@ -12,7 +12,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const isImage = file.mimetype.startsWith("image/");
     const isVideo = file.mimetype.startsWith("video/");
-    
+
     if (isImage || isVideo) {
       cb(null, true);
     } else {
@@ -129,5 +129,5 @@ const uploadToCloudinary = async (req, res, next) => {
   }
 };
 
-module.exports = { uploadRoomMedia, uploadToCloudinary };
+module.exports = { upload, uploadRoomMedia, uploadToCloudinary };
 

@@ -1,6 +1,9 @@
-const User = require("../models/User");
+const cloudinary = require("../config/cloudinary");
+const { Readable } = require("stream");
 
 const userController = {
+  // ... (other methods)
+
   getAllUsers: async (req, res) => {
     try {
       const users = await User.find().select("-password");
@@ -80,9 +83,28 @@ const userController = {
       let { avatar } = req.body;
       const userId = req.user._id;
 
-      // Nếu có file upload lên (qua middleware upload Cloudinary), dùng path của file làm avatar
+      // Nếu có file upload lên (qua middleware upload.single("avatar")), upload lên Cloudinary
       if (req.file) {
-        avatar = req.file.path;
+        const uploadPromise = new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "ezhome/avatars",
+              resource_type: "image",
+              allowed_formats: ["jpg", "jpeg", "png", "webp"],
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          const bufferStream = new Readable();
+          bufferStream.push(req.file.buffer);
+          bufferStream.push(null);
+          bufferStream.pipe(stream);
+        });
+
+        const result = await uploadPromise;
+        avatar = result.secure_url;
       }
 
       const updateData = {};
