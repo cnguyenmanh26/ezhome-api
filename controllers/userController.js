@@ -1,3 +1,4 @@
+const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
 const { Readable } = require("stream");
 
