@@ -72,17 +72,32 @@ const corsOptions = {
       return;
     }
 
-    // Production: chỉ cho phép domains cụ thể
+    // Production: xây dựng danh sách whitelist
+    const prodList = process.env.FRONTEND_URL_PROD
+      ? process.env.FRONTEND_URL_PROD.split(",").map((u) => u.trim())
+      : [];
+
+    const devList = process.env.FRONTEND_URL_DEV
+      ? process.env.FRONTEND_URL_DEV.split(",").map((u) => u.trim())
+      : [];
+
+    // Kết hợp các nguồn: hardcoded + prod env + dev env
+    // Giữ lại FRONTEND_URL cũ để tương thích ngược nếu cần
     let allowedOrigins = [
       "https://ezhome.website",
       "https://www.ezhome.website",
-      process.env.FRONTEND_URL_DEV,
+      ...prodList,
+      ...devList,
     ];
 
-    // Nếu có FRONTEND_URL trong env, override
+    // Nếu có FRONTEND_URL (cũ) trong env, thêm vào luôn thay vì override hoàn toàn
     if (process.env.FRONTEND_URL && typeof process.env.FRONTEND_URL === 'string') {
-      allowedOrigins = process.env.FRONTEND_URL.split(",").map((url) => url.trim());
+      const legacyUrls = process.env.FRONTEND_URL.split(",").map((url) => url.trim());
+      allowedOrigins = [...allowedOrigins, ...legacyUrls];
     }
+
+    // Lọc bỏ các giá trị rỗng/undefined và duplicate
+    allowedOrigins = [...new Set(allowedOrigins.filter(Boolean))];
 
     if (!origin) {
       // Same-origin request (không có origin header)
@@ -91,7 +106,8 @@ const corsOptions = {
       console.log("CORS: Allowing origin (production):", origin);
       callback(null, true);
     } else {
-      console.log("CORS: Blocking origin:", origin);
+      console.warn("CORS: Blocking origin:", origin);
+      console.warn("Allowed origins:", allowedOrigins);
       callback(new Error("Not allowed by CORS"));
     }
   },

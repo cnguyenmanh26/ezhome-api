@@ -2,39 +2,56 @@ const jwt = require("jsonwebtoken");
 
 // Helper function to get frontend URL - works for all environments
 const getFrontendUrl = (req) => {
-    // 1. Ưu tiên: Environment variable (set trên hosting platform)
+    // Lấy danh sách các URL được phép từ env
+    const prodUrls = process.env.FRONTEND_URL_PROD
+        ? process.env.FRONTEND_URL_PROD.split(",").map(u => u.trim())
+        : [];
+    const devUrls = process.env.FRONTEND_URL_DEV
+        ? process.env.FRONTEND_URL_DEV.split(",").map(u => u.trim())
+        : [];
+    const allowedUrls = [...prodUrls, ...devUrls, process.env.FRONTEND_URL].filter(Boolean);
+
+    // Helper để tìm URL khớp trong danh sách allowed
+    const findMatchingUrl = (urlToCheck) => {
+        if (!urlToCheck) return null;
+        try {
+            const originObj = new URL(urlToCheck);
+            const originStr = `${originObj.protocol}//${originObj.host}`;
+            return allowedUrls.find(allowed => {
+                try {
+                    const allowedObj = new URL(allowed);
+                    return allowedObj.origin === originStr;
+                } catch { return false; }
+            });
+        } catch { return null; }
+    };
+
+    // 1. Ưu tiên: Detect từ origin header (thường có trong request API)
+    const origin = req.get("origin");
+    const matchedOrigin = findMatchingUrl(origin);
+    if (matchedOrigin) {
+        console.log("Using matched origin:", matchedOrigin);
+        return matchedOrigin;
+    }
+
+    // 2. Fallback: Detect từ referer header (Google redirect thường có referer)
+    const referer = req.get("referer");
+    const matchedReferer = findMatchingUrl(referer);
+    if (matchedReferer) {
+        console.log("Using matched referer:", matchedReferer);
+        return matchedReferer;
+    }
+
+    // 3. Nếu không detect được hoặc không khớp whitelist, dùng default cố định
     if (process.env.FRONTEND_URL) {
-        console.log("Using FRONTEND_URL from env:", process.env.FRONTEND_URL);
+        console.log("Using default FRONTEND_URL:", process.env.FRONTEND_URL);
         return process.env.FRONTEND_URL;
     }
 
-    // 2. Fallback: Detect từ referer header (Google redirect có referer)
-    const referer = req.get("referer");
-    if (referer) {
-        try {
-            const url = new URL(referer);
-            const detectedUrl = `${url.protocol}//${url.host}`;
-            console.log("Detected frontend URL from referer:", detectedUrl);
-            return detectedUrl;
-        } catch (e) {
-            console.error("Invalid referer URL:", referer);
-        }
-    }
-
-    // 3. Fallback: Detect từ origin header
-    const origin = req.get("origin");
-    if (origin) {
-        console.log("Using origin header:", origin);
-        return origin;
-    }
-
-    // 4. Last fallback dựa vào NODE_ENV
-    const fallbackUrl = process.env.NODE_ENV === "production"
-        ? "https://ezhome.website"  // Production domain
-        : "http://localhost:3000";   // Local development
-
-    console.log("Using fallback URL:", fallbackUrl);
-    return fallbackUrl;
+    // 4. Last fallback
+    return process.env.NODE_ENV === "production"
+        ? "https://ezhome.website"
+        : "http://localhost:3000";
 };
 
 const generateAccessToken = (user) => {
