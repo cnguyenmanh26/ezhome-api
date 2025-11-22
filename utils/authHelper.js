@@ -42,7 +42,12 @@ const getFrontendUrl = (req) => {
         return matchedReferer;
     }
 
-    // 3. Nếu không detect được hoặc không khớp whitelist, dùng default cố định
+    // 3. Nếu không detect được hoặc không khớp whitelist, dùng default theo môi trường
+    if (process.env.NODE_ENV === "development" && process.env.FRONTEND_URL_DEV) {
+        console.log("Using FRONTEND_URL_DEV (development):", process.env.FRONTEND_URL_DEV);
+        return process.env.FRONTEND_URL_DEV;
+    }
+
     if (process.env.FRONTEND_URL) {
         console.log("Using default FRONTEND_URL:", process.env.FRONTEND_URL);
         return process.env.FRONTEND_URL;

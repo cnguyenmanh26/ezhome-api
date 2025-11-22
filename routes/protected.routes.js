@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
+const User = require("../models/User");
 
 /**
  * @swagger
@@ -24,11 +25,21 @@ const authMiddleware = require("../middleware/authMiddleware");
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/profile", authMiddleware, (req, res) => {
-  res.json({
-    message: "This is a protected route",
-    user: req.user,
-  });
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    // Fetch full user data from database
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({
+      message: "This is a protected route",
+      user,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 /**
