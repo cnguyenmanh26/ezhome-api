@@ -118,6 +118,26 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 
+// DEBUG LOGGING MIDDLEWARE
+app.use((req, res, next) => {
+  console.log("------------------------------------------------");
+  console.log(`[${new Date().toISOString()}] Incoming Request:`);
+  console.log(`METHOD: ${req.method}`);
+  console.log(`URL: ${req.originalUrl}`);
+  console.log(`HEADERS:`, {
+    origin: req.get("origin"),
+    referer: req.get("referer"),
+    host: req.get("host"),
+    "user-agent": req.get("user-agent"),
+    "content-type": req.get("content-type")
+  });
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log("BODY:", JSON.stringify(req.body, null, 2));
+  }
+  console.log("------------------------------------------------");
+  next();
+});
+
 swaggerSetup(app);
 
 connectDB();
@@ -172,6 +192,31 @@ app.use("/api/test", testRoutes);
 app.use("/api", protectedRoutes);
 app.use("/api", indexRoutes);
 
-app.use(errorHandler);
+// 404 Handler - Log requests that didn't match any route
+app.use((req, res, next) => {
+  console.warn(`⚠️  404 Not Found: ${req.method} ${req.originalUrl}`);
+  console.warn("   Headers:", req.headers);
+  res.status(404).json({
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error Handler:");
+  console.error(`   Request: ${req.method} ${req.originalUrl}`);
+  console.error("   Error:", err.message);
+  console.error("   Stack:", err.stack);
+
+  // Delegate to default error handler if headers sent
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? err : {}
+  });
+});
 app.enable('trust proxy');
 app.listen(port, () => console.log(`Server running on port ${port}`));
