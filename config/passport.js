@@ -21,7 +21,7 @@ if (hasGoogleConfig) {
   console.log("✅ Google OAuth configured:");
   console.log("   Client ID:", process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + "...");
   console.log("   Callback URL:", process.env.GOOGLE_CALLBACK_URL);
-  
+
   passport.use(
     new GoogleStrategy(
       {
@@ -45,6 +45,12 @@ if (hasGoogleConfig) {
           let user = await User.findOne({ googleId });
 
           if (user) {
+            // Cập nhật name nếu user chưa có name
+            if (!user.name || user.name.trim() === "") {
+              user.name = name;
+              await user.save();
+            }
+            // Không cập nhật avatar vì user có thể đã tự upload avatar riêng
             return done(null, user);
           }
 
@@ -52,9 +58,11 @@ if (hasGoogleConfig) {
 
           if (user) {
             user.googleId = googleId;
+            // Chỉ set avatar từ Google nếu user chưa có avatar
             if (avatar && !user.avatar) {
               user.avatar = avatar;
             }
+            // Cập nhật name nếu user chưa có name
             if (!user.name || user.name.trim() === "") {
               user.name = name;
             }
