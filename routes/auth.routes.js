@@ -163,56 +163,54 @@ router.post("/refresh-token", authController.refreshToken);
  */
 router.post("/logout", authController.logout);
 
-// Google OAuth routes - chỉ register nếu được cấu hình
-if (isGoogleOAuthConfigured()) {
-  /**
-   * @swagger
-   * /api/auth/google:
-   *   get:
-   *     summary: Initiate Google OAuth login
-   *     tags: [Authentication]
-   *     responses:
-   *       302:
-   *         description: Redirects to Google OAuth consent screen
-   */
-  router.get(
-    "/google",
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
-    })
-  );
+// Google OAuth routes - Luôn đăng ký để tránh lỗi 404 khó hiểu
+// Nếu chưa cấu hình, passport.authenticate sẽ thất bại hoặc chúng ta có thể check trước
 
-  /**
-   * @swagger
-   * /api/auth/google/callback:
-   *   get:
-   *     summary: Google OAuth callback endpoint
-   *     tags: [Authentication]
-   *     responses:
-   *       302:
-   *         description: Redirects to frontend with access token
-   */
-  router.get(
-    "/google/callback",
-    passport.authenticate("google", { session: false }),
-    authController.googleAuthCallback
-  );
-} else {
-  // Route fallback nếu Google OAuth chưa được cấu hình
-  router.get("/google", (req, res) => {
-    res.status(503).json({
-      message: "Google OAuth chưa được cấu hình",
-      hint: "Vui lòng thêm GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, và GOOGLE_CALLBACK_URL vào file .env",
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags: [Authentication]
+ *     responses:
+ *       302:
+ *         description: Redirects to Google OAuth consent screen
+ *       503:
+ *         description: Google OAuth not configured
+ */
+router.get("/google", (req, res, next) => {
+  if (!isGoogleOAuthConfigured()) {
+    return res.status(503).json({
+      message: "Google OAuth chưa được cấu hình trên server",
+      hint: "Vui lòng kiểm tra biến môi trường GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL"
     });
-  });
+  }
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })(req, res, next);
+});
 
-  router.get("/google/callback", (req, res) => {
-    res.status(503).json({
-      message: "Google OAuth chưa được cấu hình",
-      hint: "Vui lòng thêm GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, và GOOGLE_CALLBACK_URL vào file .env",
-    });
-  });
-}
+/**
+ * @swagger
+ * /api/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth callback endpoint
+ *     tags: [Authentication]
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend with access token
+ */
+router.get(
+  "/google/callback",
+  (req, res, next) => {
+    if (!isGoogleOAuthConfigured()) {
+      return res.redirect(`${process.env.FRONTEND_URL || '/'}?error=server_configuration_error`);
+    }
+    next();
+  },
+  passport.authenticate("google", { session: false }),
+  authController.googleAuthCallback
+);
 
 module.exports = router;
 

@@ -160,15 +160,17 @@ app.get("/api/debug/env", (req, res) => {
   });
 });
 
-app.use("/api", indexRoutes);
+// Route definitions - Specific routes first
 app.use("/api/auth", authRoutes);
-app.use("/api", protectedRoutes);
-app.use("/api/test", testRoutes);
+app.use("/api/home", homeRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/home", homeRoutes);
-// server-side proxy for provinces/districts to avoid CORS issues from browser
 app.use("/api/locations", locationRoutes);
+app.use("/api/test", testRoutes);
+
+// Generic / shared routes last
+app.use("/api", protectedRoutes);
+app.use("/api", indexRoutes);
 
 app.use(errorHandler);
 app.enable('trust proxy');
