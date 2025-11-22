@@ -65,6 +65,8 @@ router.get("/users", authMiddleware, adminMiddleware, userController.getAllUsers
  */
 router.get("/users/:id", authMiddleware, userController.getUserById);
 
+const upload = require("../middleware/multer");
+
 /**
  * @swagger
  * /api/users/profile/update:
@@ -76,7 +78,7 @@ router.get("/users/:id", authMiddleware, userController.getUserById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -84,8 +86,13 @@ router.get("/users/:id", authMiddleware, userController.getUserById);
  *                 type: string
  *               phone:
  *                 type: string
+ *               email:
+ *                 type: string
+ *               address:
+ *                 type: string
  *               avatar:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -98,7 +105,7 @@ router.get("/users/:id", authMiddleware, userController.getUserById);
  *       500:
  *         description: Server error
  */
-router.put("/users/profile/update", authMiddleware, userController.updateOwnProfile);
+router.put("/users/profile/update", authMiddleware, upload.single("avatar"), userController.updateOwnProfile);
 
 /**
  * @swagger

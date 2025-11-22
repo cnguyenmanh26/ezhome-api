@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  address: {
+    type: String,
+    trim: true,
+  },
 });
 
 userSchema.index({ email: 1 }, { unique: true, sparse: true });

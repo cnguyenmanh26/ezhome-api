@@ -76,13 +76,29 @@ const userController = {
 
   updateOwnProfile: async (req, res) => {
     try {
-      const { name, phone, avatar } = req.body;
+      const { name, phone, email, address } = req.body;
+      let { avatar } = req.body;
       const userId = req.user._id;
+
+      // Nếu có file upload lên (qua middleware upload Cloudinary), dùng path của file làm avatar
+      if (req.file) {
+        avatar = req.file.path;
+      }
 
       const updateData = {};
       if (name !== undefined) updateData.name = name;
       if (phone !== undefined) updateData.phone = phone;
       if (avatar !== undefined) updateData.avatar = avatar;
+      if (address !== undefined) updateData.address = address;
+
+      // Nếu cập nhật email, cần kiểm tra xem email đã tồn tại chưa (trừ chính user này)
+      if (email !== undefined) {
+        const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+        if (existingUser) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+        updateData.email = email;
+      }
 
       const user = await User.findByIdAndUpdate(
         userId,
@@ -100,6 +116,15 @@ const userController = {
       });
     } catch (error) {
       console.error("Update own profile error:", error);
+      if (error.code === 11000) {
+        // Handle duplicate key error (e.g., phone number already exists)
+        if (error.keyPattern.phone) {
+          return res.status(400).json({ message: "Phone number already in use" });
+        }
+        if (error.keyPattern.email) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+      }
       res.status(500).json({ message: "Server error" });
     }
   },
